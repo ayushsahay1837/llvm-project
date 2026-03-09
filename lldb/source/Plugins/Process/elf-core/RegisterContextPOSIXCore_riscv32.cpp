@@ -1,4 +1,4 @@
-//===-- RegisterContextPOSIXCore_riscv32.cpp ------------------------------===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -36,17 +36,21 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
     const DataExtractor &gpregset, llvm::ArrayRef<CoreNote> notes)
     : RegisterContext(thread, 0), m_reg_infos_up(std::move(register_info)) {
   // Compute the maximum register counts for GPR, FPR, and CSR.
-  uint32_t k_num_gpr_registers = (sizeof(g_register_infos_riscv32_gpr) /
-                                  sizeof(g_register_infos_riscv32_gpr[0]));
-  uint32_t k_num_fpr_registers = (sizeof(g_register_infos_riscv32_fpr) /
-                                  sizeof(g_register_infos_riscv32_fpr[0]));
-  uint32_t k_num_csr_registers = (sizeof(g_register_infos_riscv32_csr) /
-                                  sizeof(g_register_infos_riscv32_csr[0]));
+  constexpr uint32_t k_num_gpr_registers =
+      (sizeof(g_register_infos_riscv32_gpr) /
+       sizeof(g_register_infos_riscv32_gpr[0]));
+  constexpr uint32_t k_num_fpr_registers =
+      (sizeof(g_register_infos_riscv32_fpr) /
+       sizeof(g_register_infos_riscv32_fpr[0]));
+  constexpr uint32_t k_num_csr_registers =
+      (sizeof(g_register_infos_riscv32_csr) /
+       sizeof(g_register_infos_riscv32_csr[0]));
 
   std::vector<DynamicRegisterInfo::Register> registers;
   uint32_t byte_offset = 0;
 
   // Build dynamic register information for GPR.
+  const lldb_private::ConstString gpr_set("GPR");
   m_gpregset.SetData(std::make_shared<DataBufferHeap>(gpregset.GetDataStart(),
                                                       gpregset.GetByteSize()));
   if (m_gpregset.GetByteSize() >= g_register_infos_riscv32_gpr[0].byte_size) {
@@ -55,80 +59,30 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
             g_register_infos_riscv32_gpr[0].byte_size) == k_num_gpr_registers &&
            "GPR has the wrong number of registers!");
     m_gpregset.SetByteOrder(gpregset.GetByteOrder());
-    for (auto gpr : g_register_infos_riscv32_gpr) {
-      std::vector<uint32_t> value_regs;
-      std::vector<uint32_t> invalidate_regs;
-      if (gpr.value_regs)
-        for (int idx = 0; gpr.value_regs[idx] != LLDB_INVALID_REGNUM; ++idx)
-          value_regs.push_back(gpr.value_regs[idx]);
-      if (gpr.invalidate_regs)
-        for (int idx = 0; gpr.invalidate_regs[idx] != LLDB_INVALID_REGNUM;
-             ++idx)
-          invalidate_regs.push_back(gpr.invalidate_regs[idx]);
-      DynamicRegisterInfo::Register reg{
-          lldb_private::ConstString(gpr.name),
-          lldb_private::ConstString(gpr.alt_name),
-          lldb_private::ConstString("GPR"),
-          gpr.byte_size,
-          byte_offset,
-          gpr.encoding,
-          gpr.format,
-          gpr.kinds[lldb::eRegisterKindDWARF],
-          gpr.kinds[lldb::eRegisterKindEHFrame],
-          gpr.kinds[lldb::eRegisterKindGeneric],
-          gpr.kinds[lldb::eRegisterKindProcessPlugin],
-          value_regs,
-          invalidate_regs,
-          /* value_reg_offset */ 0,
-          gpr.flags_type};
-
-      registers.push_back(reg);
+    for (const auto &gpr : g_register_infos_riscv32_gpr) {
+      registers.push_back(GetDynamicRegisterInfo(gpr, gpr_set, byte_offset));
       byte_offset += gpr.byte_size;
     }
   }
 
   // Build dynamic register information for FPR.
+  const lldb_private::ConstString fpr_set("FPR");
   m_fpregset = getRegset(
       notes, m_reg_infos_up->GetTargetArchitecture().GetTriple(), FPR_Desc);
   if (m_fpregset.GetByteSize() >= g_register_infos_riscv32_fpr[0].byte_size) {
-    // GPR is available.
+    // FPR is available.
     assert((m_fpregset.GetByteSize() /
             g_register_infos_riscv32_fpr[0].byte_size) == k_num_fpr_registers &&
            "FPR has the wrong number of registers!");
     m_fpregset.SetByteOrder(lldb::eByteOrderLittle);
-    for (auto fpr : g_register_infos_riscv32_fpr) {
-      std::vector<uint32_t> value_regs;
-      std::vector<uint32_t> invalidate_regs;
-      if (fpr.value_regs)
-        for (int idx = 0; fpr.value_regs[idx] != LLDB_INVALID_REGNUM; ++idx)
-          value_regs.push_back(fpr.value_regs[idx]);
-      if (fpr.invalidate_regs)
-        for (int idx = 0; fpr.invalidate_regs[idx] != LLDB_INVALID_REGNUM;
-             ++idx)
-          invalidate_regs.push_back(fpr.invalidate_regs[idx]);
-      DynamicRegisterInfo::Register reg{
-          lldb_private::ConstString(fpr.name),
-          lldb_private::ConstString(fpr.alt_name),
-          lldb_private::ConstString("FPR"),
-          fpr.byte_size,
-          byte_offset,
-          fpr.encoding,
-          fpr.format,
-          fpr.kinds[lldb::eRegisterKindDWARF],
-          fpr.kinds[lldb::eRegisterKindEHFrame],
-          fpr.kinds[lldb::eRegisterKindGeneric],
-          fpr.kinds[lldb::eRegisterKindProcessPlugin],
-          value_regs,
-          invalidate_regs,
-          /* value_reg_offset */ 0,
-          fpr.flags_type};
-
-      registers.push_back(reg);
+    for (const auto &fpr : g_register_infos_riscv32_fpr) {
+      registers.push_back(GetDynamicRegisterInfo(fpr, fpr_set, byte_offset));
       byte_offset += fpr.byte_size;
     }
   }
 
   // Build dynamic register information for CSR.
+  const lldb_private::ConstString csr_set("CSR");
   m_csregset =
       getRegset(notes, m_reg_infos_up->GetTargetArchitecture().GetTriple(),
                 RISCV32_CSREGMAP_Desc);
@@ -138,7 +92,6 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
     m_csregset.SetByteOrder(lldb::eByteOrderLittle);
     lldb::offset_t offset = 0;
     while (m_csregset.BytesLeft(offset)) {
-      RegisterInfo csr;
       uint32_t csr_addr = m_csregset.GetU32(&offset);
       if (m_csregset_regnums.size() == k_num_csr_registers) {
         printf("Parsed the permissible number of CSRs (%d) but NT_CSREGMAP has "
@@ -152,35 +105,10 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
                g_register_infos_riscv32_csr[csr_addr].name);
       } else {
         m_csregset_regnums.push_back(csr_addr);
-        csr = g_register_infos_riscv32_csr[csr_addr];
-        std::vector<uint32_t> value_regs;
-        std::vector<uint32_t> invalidate_regs;
-        if (csr.value_regs)
-          for (int idx = 0; csr.value_regs[idx] != LLDB_INVALID_REGNUM; ++idx)
-            value_regs.push_back(csr.value_regs[idx]);
-        if (csr.invalidate_regs)
-          for (int idx = 0; csr.invalidate_regs[idx] != LLDB_INVALID_REGNUM;
-               ++idx)
-            invalidate_regs.push_back(csr.invalidate_regs[idx]);
-        DynamicRegisterInfo::Register reg{
-            lldb_private::ConstString(csr.name),
-            lldb_private::ConstString(csr.alt_name),
-            lldb_private::ConstString("CSR"),
-            csr.byte_size,
-            byte_offset,
-            csr.encoding,
-            csr.format,
-            csr.kinds[lldb::eRegisterKindDWARF],
-            csr.kinds[lldb::eRegisterKindEHFrame],
-            csr.kinds[lldb::eRegisterKindGeneric],
-            csr.kinds[lldb::eRegisterKindProcessPlugin],
-            value_regs,
-            invalidate_regs,
-            /* value_reg_offset */ 0,
-            csr.flags_type};
-        registers.push_back(reg);
+        const RegisterInfo &csr = g_register_infos_riscv32_csr[csr_addr];
+        registers.push_back(GetDynamicRegisterInfo(csr, csr_set, byte_offset));
+        byte_offset += csr.byte_size;
       }
-      byte_offset += csr.byte_size;
       (void)m_csregset.GetU32(&offset);
     }
   }
@@ -375,4 +303,38 @@ bool RegisterContextCorePOSIX_riscv32::IsCSR(unsigned reg) {
           .equals_insensitive(llvm::StringRef("CSR")))
     return true;
   return false;
+}
+
+lldb_private::DynamicRegisterInfo::Register
+RegisterContextCorePOSIX_riscv32::GetDynamicRegisterInfo(
+    const lldb_private::RegisterInfo &reg_info,
+    const lldb_private::ConstString &set_name, uint32_t byte_offset) {
+  std::vector<uint32_t> value_regs;
+  std::vector<uint32_t> invalidate_regs;
+
+  if (reg_info.value_regs)
+    for (int idx = 0; reg_info.value_regs[idx] != LLDB_INVALID_REGNUM; ++idx)
+      value_regs.push_back(reg_info.value_regs[idx]);
+
+  if (reg_info.invalidate_regs)
+    for (int idx = 0; reg_info.invalidate_regs[idx] != LLDB_INVALID_REGNUM;
+         ++idx)
+      invalidate_regs.push_back(reg_info.invalidate_regs[idx]);
+
+  return DynamicRegisterInfo::Register{
+      lldb_private::ConstString(reg_info.name),
+      lldb_private::ConstString(reg_info.alt_name),
+      set_name,
+      reg_info.byte_size,
+      byte_offset,
+      reg_info.encoding,
+      reg_info.format,
+      reg_info.kinds[lldb::eRegisterKindDWARF],
+      reg_info.kinds[lldb::eRegisterKindEHFrame],
+      reg_info.kinds[lldb::eRegisterKindGeneric],
+      reg_info.kinds[lldb::eRegisterKindProcessPlugin],
+      std::move(value_regs),
+      std::move(invalidate_regs),
+      /*value_reg_offset=*/0,
+      reg_info.flags_type};
 }

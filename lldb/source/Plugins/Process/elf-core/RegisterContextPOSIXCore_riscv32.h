@@ -1,4 +1,4 @@
-//===-- RegisterContextPOSIXCore_riscv32.h ----------------------*- C++ -*-===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -60,6 +60,11 @@ protected:
   bool IsFPR(unsigned reg);
 
   bool IsCSR(unsigned reg);
+
+  lldb_private::DynamicRegisterInfo::Register
+  GetDynamicRegisterInfo(const lldb_private::RegisterInfo &reg_info,
+                         const lldb_private::ConstString &set_name,
+                         uint32_t byte_offset);
 
 private:
   std::unique_ptr<RegisterInfoPOSIXDynamic_riscv32> m_reg_infos_up;

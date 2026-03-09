@@ -354,7 +354,7 @@ UUID ProcessElfCore::FindModuleUUID(const llvm::StringRef path) {
 }
 
 lldb_private::DynamicLoader *ProcessElfCore::GetDynamicLoader() {
-  if (m_dyld_up.get() == nullptr) {
+  if (!m_dyld_up.get()) {
     llvm::StringRef dyld_name;
     if (GetTarget().GetArchitecture().GetMachine() == llvm::Triple::riscv32 &&
         GetTarget().GetArchitecture().GetTriple().getOS() ==
@@ -1072,7 +1072,7 @@ llvm::Error ProcessElfCore::ParseThreadContextsFromNoteSegment(
       return parseLinuxNotes(*notes_or_error);
     else
       return llvm::make_error<llvm::StringError>(
-          "Don't know how to parse core file. Unsupported OS.",
+          "don't know how to parse core file: unsupported OS.",
           llvm::inconvertibleErrorCode());
   }
 }

@@ -8,14 +8,13 @@
 
 #ifdef DECLARE_REGISTER_INFOS_RISCV32_STRUCT
 
-#include <stddef.h>
-
+#include "Utility/RISCV_DWARF_Registers.h"
+#include "lldb-riscv-register-enums.h"
 #include "lldb/lldb-defines.h"
 #include "lldb/lldb-enumerations.h"
 #include "lldb/lldb-private.h"
 
-#include "Utility/RISCV_DWARF_Registers.h"
-#include "lldb-riscv-register-enums.h"
+#include <stddef.h>
 
 #ifndef GPR_OFFSET
 #error GPR_OFFSET must be defined before including this header file

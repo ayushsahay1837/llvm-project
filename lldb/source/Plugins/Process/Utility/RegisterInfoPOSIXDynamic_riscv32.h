@@ -1,4 +1,4 @@
-//===-- RegisterInfoPOSIXDynamic_riscv32.h ----------------------*- C++ -*-===//
+//===----------------------------------------------------------------------===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -14,6 +14,7 @@
 #include "lldb/Target/RegisterContext.h"
 #include "lldb/Utility/Flags.h"
 #include "lldb/lldb-private.h"
+
 #include <map>
 
 class RegisterInfoPOSIXDynamic_riscv32
