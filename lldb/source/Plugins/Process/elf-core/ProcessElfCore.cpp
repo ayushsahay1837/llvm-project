@@ -354,7 +354,7 @@ UUID ProcessElfCore::FindModuleUUID(const llvm::StringRef path) {
 }
 
 lldb_private::DynamicLoader *ProcessElfCore::GetDynamicLoader() {
-  if (!m_dyld_up.get()) {
+  if (!m_dyld_up) {
     llvm::StringRef dyld_name;
     if (GetTarget().GetArchitecture().GetMachine() == llvm::Triple::riscv32 &&
         GetTarget().GetArchitecture().GetTriple().getOS() ==
