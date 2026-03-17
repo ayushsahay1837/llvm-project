@@ -1071,9 +1071,8 @@ llvm::Error ProcessElfCore::ParseThreadContextsFromNoteSegment(
             llvm::Triple::UnknownOS)
       return parseLinuxNotes(*notes_or_error);
     else
-      return llvm::make_error<llvm::StringError>(
-          "don't know how to parse core file: unsupported OS",
-          llvm::inconvertibleErrorCode());
+      return llvm::createStringError(
+          "don't know how to parse core file: unsupported OS");
   }
 }
 
