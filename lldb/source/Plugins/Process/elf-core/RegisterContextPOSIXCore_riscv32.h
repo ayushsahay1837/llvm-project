@@ -62,9 +62,9 @@ protected:
   bool IsCSR(unsigned reg);
 
   lldb_private::DynamicRegisterInfo::Register
-  GetDynamicRegisterInfo(const lldb_private::RegisterInfo &reg_info,
-                         const lldb_private::ConstString &set_name,
-                         uint32_t byte_offset);
+  BuildDynamicRegister(const lldb_private::RegisterInfo &reg_info,
+                       const lldb_private::ConstString &set_name,
+                       uint32_t byte_offset);
 
 private:
   std::unique_ptr<RegisterInfoPOSIXDynamic_riscv32> m_reg_infos_up;

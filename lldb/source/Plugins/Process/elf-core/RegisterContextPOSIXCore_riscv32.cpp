@@ -8,6 +8,7 @@
 
 #include "RegisterContextPOSIXCore_riscv32.h"
 
+#include "lldb/Core/Debugger.h"
 #include "lldb/Utility/DataBufferHeap.h"
 
 #define GPR_OFFSET(idx) ((idx) * sizeof(uint32_t))
@@ -37,14 +38,11 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
     : RegisterContext(thread, 0), m_reg_infos_up(std::move(register_info)) {
   // Compute the maximum register counts for GPR, FPR, and CSR.
   constexpr uint32_t k_num_gpr_registers =
-      (sizeof(g_register_infos_riscv32_gpr) /
-       sizeof(g_register_infos_riscv32_gpr[0]));
+      std::size(g_register_infos_riscv32_gpr);
   constexpr uint32_t k_num_fpr_registers =
-      (sizeof(g_register_infos_riscv32_fpr) /
-       sizeof(g_register_infos_riscv32_fpr[0]));
+      std::size(g_register_infos_riscv32_fpr);
   constexpr uint32_t k_num_csr_registers =
-      (sizeof(g_register_infos_riscv32_csr) /
-       sizeof(g_register_infos_riscv32_csr[0]));
+      std::size(g_register_infos_riscv32_csr);
 
   std::vector<DynamicRegisterInfo::Register> registers;
   uint32_t byte_offset = 0;
@@ -60,7 +58,7 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
            "GPR has the wrong number of registers!");
     m_gpregset.SetByteOrder(gpregset.GetByteOrder());
     for (const auto &gpr : g_register_infos_riscv32_gpr) {
-      registers.push_back(GetDynamicRegisterInfo(gpr, gpr_set, byte_offset));
+      registers.push_back(BuildDynamicRegister(gpr, gpr_set, byte_offset));
       byte_offset += gpr.byte_size;
     }
   }
@@ -76,7 +74,7 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
            "FPR has the wrong number of registers!");
     m_fpregset.SetByteOrder(lldb::eByteOrderLittle);
     for (const auto &fpr : g_register_infos_riscv32_fpr) {
-      registers.push_back(GetDynamicRegisterInfo(fpr, fpr_set, byte_offset));
+      registers.push_back(BuildDynamicRegister(fpr, fpr_set, byte_offset));
       byte_offset += fpr.byte_size;
     }
   }
@@ -94,19 +92,21 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
     while (m_csregset.BytesLeft(offset)) {
       uint32_t csr_addr = m_csregset.GetU32(&offset);
       if (m_csregset_regnums.size() == k_num_csr_registers) {
-        printf("Parsed the permissible number of CSRs (%d) but NT_CSREGMAP has "
-               "more! Skipping the remaining CSRs!\n",
-               k_num_csr_registers);
+        Debugger::ReportWarning(
+            llvm::formatv("parsed the permissible number of CSRs {0:x} but "
+                          "NT_CSREGMAP has more; skipping the remaining CSRs",
+                          k_num_csr_registers));
         break;
       }
       if (llvm::is_contained(m_csregset_regnums, csr_addr)) {
-        printf("Encountered a duplicate CSR while parsing NT_CSREGMAP: %s! "
-               "Skipping!\n",
-               g_register_infos_riscv32_csr[csr_addr].name);
+        Debugger::ReportWarning(
+            llvm::formatv("encountered a duplicate CSR while parsing "
+                          "NT_CSREGMAP: {0}; skipping",
+                          g_register_infos_riscv32_csr[csr_addr].name));
       } else {
         m_csregset_regnums.push_back(csr_addr);
         const RegisterInfo &csr = g_register_infos_riscv32_csr[csr_addr];
-        registers.push_back(GetDynamicRegisterInfo(csr, csr_set, byte_offset));
+        registers.push_back(BuildDynamicRegister(csr, csr_set, byte_offset));
         byte_offset += csr.byte_size;
       }
       (void)m_csregset.GetU32(&offset);
@@ -306,7 +306,7 @@ bool RegisterContextCorePOSIX_riscv32::IsCSR(unsigned reg) {
 }
 
 lldb_private::DynamicRegisterInfo::Register
-RegisterContextCorePOSIX_riscv32::GetDynamicRegisterInfo(
+RegisterContextCorePOSIX_riscv32::BuildDynamicRegister(
     const lldb_private::RegisterInfo &reg_info,
     const lldb_private::ConstString &set_name, uint32_t byte_offset) {
   std::vector<uint32_t> value_regs;

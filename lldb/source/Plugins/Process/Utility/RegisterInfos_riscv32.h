@@ -30,8 +30,6 @@
 
 using namespace riscv_dwarf;
 
-// clang-format off
-
 // Assuming register numbers seen in eh_frame and DWARF to be the same.
 #define KIND_HELPER(reg, generic_kind)                                         \
   {                                                                            \
@@ -95,8 +93,6 @@ using namespace riscv_dwarf;
     #reg, #alt, 4, 0, lldb::eEncodingUint, lldb::eFormatHex,                   \
         CSR_KIND(csr_##reg, generic_kind), nullptr, nullptr, nullptr           \
   }
-
-// clang-format on
 
 static lldb_private::RegisterInfo g_register_infos_riscv32_le[] = {
     // DEFINE_GPR32(name, GENERIC KIND)

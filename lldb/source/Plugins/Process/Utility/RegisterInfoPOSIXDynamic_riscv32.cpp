@@ -27,7 +27,7 @@ size_t RegisterInfoPOSIXDynamic_riscv32::GetGPRSize() const {
   for (uint32_t set_idx = 0; set_idx < GetRegisterSetCount(); ++set_idx) {
     const lldb_private::RegisterSet *set =
         m_dyn_reg_infos.GetRegisterSet(set_idx);
-    if (lldb_private::ConstString(set->name) == "GPR")
+    if (strcmp(set->name, "GPR") == 0)
       return set->num_registers;
   }
   return 0;
@@ -37,7 +37,7 @@ size_t RegisterInfoPOSIXDynamic_riscv32::GetFPRSize() const {
   for (uint32_t set_idx = 0; set_idx < GetRegisterSetCount(); ++set_idx) {
     const lldb_private::RegisterSet *set =
         m_dyn_reg_infos.GetRegisterSet(set_idx);
-    if (lldb_private::ConstString(set->name) == "FPR")
+    if (strcmp(set->name, "FPR") == 0)
       return set->num_registers;
   }
   return 0;
