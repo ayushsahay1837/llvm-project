@@ -32,10 +32,8 @@ using namespace riscv_dwarf;
 
 // Assuming register numbers seen in eh_frame and DWARF to be the same.
 #define KIND_HELPER(reg, generic_kind)                                         \
-  {                                                                            \
-    riscv_dwarf::dwarf_##reg, riscv_dwarf::dwarf_##reg, generic_kind,          \
-        LLDB_INVALID_REGNUM, reg##_riscv                                       \
-  }
+  {riscv_dwarf::dwarf_##reg, riscv_dwarf::dwarf_##reg, generic_kind,           \
+   LLDB_INVALID_REGNUM, reg##_riscv}
 
 // Generates RegisterInfo::kinds for GPRs.
 #define GPR32_KIND(reg, generic_kind) KIND_HELPER(reg, generic_kind)
@@ -54,11 +52,16 @@ using namespace riscv_dwarf;
 
 // Defines a 32-bit GPR.
 #define DEFINE_GPR32_ALT(reg, alt, generic_kind)                               \
-  {                                                                            \
-    #reg, #alt, 4, GPR_OFFSET(gpr_##reg##_riscv - gpr_first_riscv),            \
-        lldb::eEncodingUint, lldb::eFormatHex,                                 \
-        GPR32_KIND(gpr_##reg, generic_kind), nullptr, nullptr, nullptr,        \
-  }
+  {#reg,                                                                       \
+   #alt,                                                                       \
+   4,                                                                          \
+   GPR_OFFSET(gpr_##reg##_riscv - gpr_first_riscv),                            \
+   lldb::eEncodingUint,                                                        \
+   lldb::eFormatHex,                                                           \
+   GPR32_KIND(gpr_##reg, generic_kind),                                        \
+   nullptr,                                                                    \
+   nullptr,                                                                    \
+   nullptr}
 
 // Defines a 32-bit FPR.
 #define DEFINE_FPR32_ALT(reg, alt, generic_kind)                               \
@@ -66,11 +69,16 @@ using namespace riscv_dwarf;
 
 // Defines a 32-bit FPR.
 #define DEFINE_FPR_ALT(reg, alt, size, generic_kind)                           \
-  {                                                                            \
-    #reg, #alt, size, FPR_OFFSET(fpr_##reg##_riscv - fpr_first_riscv),         \
-        lldb::eEncodingIEEE754, lldb::eFormatHex,                              \
-        FPR32_KIND(fpr_##reg, generic_kind), nullptr, nullptr, nullptr,        \
-  }
+  {#reg,                                                                       \
+   #alt,                                                                       \
+   size,                                                                       \
+   FPR_OFFSET(fpr_##reg##_riscv - fpr_first_riscv),                            \
+   lldb::eEncodingIEEE754,                                                     \
+   lldb::eFormatHex,                                                           \
+   FPR32_KIND(fpr_##reg, generic_kind),                                        \
+   nullptr,                                                                    \
+   nullptr,                                                                    \
+   nullptr}
 
 // Defines a 32-bit VPR.
 #define DEFINE_VPR(reg, generic_kind) DEFINE_VPR_ALT(reg, reg, generic_kind)
@@ -79,20 +87,32 @@ using namespace riscv_dwarf;
 // The byte offset of 0 is a placeholder and should be corrected at runtime.
 // Defines a 32-bit VPR.
 #define DEFINE_VPR_ALT(reg, alt, generic_kind)                                 \
-  {                                                                            \
-    #reg, #alt, 16, 0, lldb::eEncodingVector, lldb::eFormatVectorOfUInt8,      \
-        VPR_KIND(vpr_##reg, generic_kind), nullptr, nullptr, nullptr           \
-  }
+  {#reg,                                                                       \
+   #alt,                                                                       \
+   16,                                                                         \
+   0,                                                                          \
+   lldb::eEncodingVector,                                                      \
+   lldb::eFormatVectorOfUInt8,                                                 \
+   VPR_KIND(vpr_##reg, generic_kind),                                          \
+   nullptr,                                                                    \
+   nullptr,                                                                    \
+   nullptr}
 
 // Defines a 32-bit CSR.
 #define DEFINE_CSR32(reg, generic_kind) DEFINE_CSR32_ALT(reg, reg, generic_kind)
 
 // Defines a 32-bit CSR.
 #define DEFINE_CSR32_ALT(reg, alt, generic_kind)                               \
-  {                                                                            \
-    #reg, #alt, 4, 0, lldb::eEncodingUint, lldb::eFormatHex,                   \
-        CSR_KIND(csr_##reg, generic_kind), nullptr, nullptr, nullptr           \
-  }
+  {#reg,                                                                       \
+   #alt,                                                                       \
+   4,                                                                          \
+   0,                                                                          \
+   lldb::eEncodingUint,                                                        \
+   lldb::eFormatHex,                                                           \
+   CSR_KIND(csr_##reg, generic_kind),                                          \
+   nullptr,                                                                    \
+   nullptr,                                                                    \
+   nullptr}
 
 static lldb_private::RegisterInfo g_register_infos_riscv32_le[] = {
     // DEFINE_GPR32(name, GENERIC KIND)
