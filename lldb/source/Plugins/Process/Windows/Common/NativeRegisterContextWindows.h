@@ -28,9 +28,6 @@ public:
   // Explicitly defining it ensures the class remains constructible.
   NativeRegisterContextWindows() {}
 
-  // Invalidate cached values in register context data structures.
-  virtual void InvalidateAllRegisters() {}
-
 protected:
   lldb::thread_t GetThreadHandle() const;
 };
