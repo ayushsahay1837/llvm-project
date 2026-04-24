@@ -21,6 +21,17 @@
 
 using namespace lldb_private;
 
+static std::vector<uint32_t> CopyRegisterListToVector(const uint32_t *regs) {
+  if (!regs)
+    return {};
+
+  const uint32_t *end = regs;
+  while (*end != LLDB_INVALID_REGNUM)
+    ++end;
+
+  return std::vector<uint32_t>(regs, end);
+}
+
 std::unique_ptr<RegisterContextCorePOSIX_riscv32>
 RegisterContextCorePOSIX_riscv32::Create(Thread &thread, const ArchSpec &arch,
                                          const DataExtractor &gpregset,
@@ -215,7 +226,7 @@ bool RegisterContextCorePOSIX_riscv32::ReadRegister(
       // |  x0  |
       // |______|
       // |      |
-      // |  f0 |
+      // |  f0  |
       // |______|
       // |      |
       // |  f1  |
@@ -309,18 +320,6 @@ lldb_private::DynamicRegisterInfo::Register
 RegisterContextCorePOSIX_riscv32::BuildDynamicRegister(
     const lldb_private::RegisterInfo &reg_info,
     const lldb_private::ConstString &set_name, uint32_t byte_offset) {
-  std::vector<uint32_t> value_regs;
-  std::vector<uint32_t> invalidate_regs;
-
-  if (reg_info.value_regs)
-    for (int idx = 0; reg_info.value_regs[idx] != LLDB_INVALID_REGNUM; ++idx)
-      value_regs.push_back(reg_info.value_regs[idx]);
-
-  if (reg_info.invalidate_regs)
-    for (int idx = 0; reg_info.invalidate_regs[idx] != LLDB_INVALID_REGNUM;
-         ++idx)
-      invalidate_regs.push_back(reg_info.invalidate_regs[idx]);
-
   return DynamicRegisterInfo::Register{
       lldb_private::ConstString(reg_info.name),
       lldb_private::ConstString(reg_info.alt_name),
@@ -333,8 +332,8 @@ RegisterContextCorePOSIX_riscv32::BuildDynamicRegister(
       reg_info.kinds[lldb::eRegisterKindEHFrame],
       reg_info.kinds[lldb::eRegisterKindGeneric],
       reg_info.kinds[lldb::eRegisterKindProcessPlugin],
-      std::move(value_regs),
-      std::move(invalidate_regs),
+      CopyRegisterListToVector(reg_info.value_regs),
+      CopyRegisterListToVector(reg_info.invalidate_regs),
       /*value_reg_offset=*/0,
       reg_info.flags_type};
 }
