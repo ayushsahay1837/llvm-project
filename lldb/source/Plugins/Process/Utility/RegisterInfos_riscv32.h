@@ -24,10 +24,6 @@
 #error FPR_OFFSET must be defined before including this header file
 #endif
 
-#ifndef CSR_OFFSET
-#error CSR_OFFSET must be defined before including this header file
-#endif
-
 using namespace riscv_dwarf;
 
 // Assuming register numbers seen in eh_frame and DWARF to be the same.

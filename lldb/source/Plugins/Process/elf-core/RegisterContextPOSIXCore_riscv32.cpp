@@ -13,7 +13,6 @@
 
 #define GPR_OFFSET(idx) ((idx) * sizeof(uint32_t))
 #define FPR_OFFSET(idx) ((idx) * sizeof(uint32_t))
-#define CSR_OFFSET(idx) ((idx) * sizeof(uint32_t))
 
 #define DECLARE_REGISTER_INFOS_RISCV32_STRUCT
 #include "Plugins/Process/Utility/RegisterInfos_riscv32.h"
