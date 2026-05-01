@@ -71,7 +71,6 @@ private:
   lldb_private::DataExtractor m_gpregset;
   lldb_private::DataExtractor m_fpregset;
   lldb_private::DataExtractor m_csregset;
-  std::vector<uint32_t> m_csregset_regnums;
 };
 
 #endif // LLDB_SOURCE_PLUGINS_PROCESS_ELF_CORE_REGISTERCONTEXTPOSIXCORE_RISCV32_H

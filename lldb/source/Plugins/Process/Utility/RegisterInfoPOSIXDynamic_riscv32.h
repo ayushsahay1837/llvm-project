@@ -12,10 +12,7 @@
 #include "RegisterInfoAndSetInterface.h"
 #include "lldb/Target/DynamicRegisterInfo.h"
 #include "lldb/Target/RegisterContext.h"
-#include "lldb/Utility/Flags.h"
 #include "lldb/lldb-private.h"
-
-#include <map>
 
 class RegisterInfoPOSIXDynamic_riscv32
     : public lldb_private::RegisterInfoAndSetInterface {

@@ -53,6 +53,9 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
       std::size(g_register_infos_riscv32_fpr);
   constexpr uint32_t k_num_csr_registers =
       std::size(g_register_infos_riscv32_csr);
+  const ArchSpec &target_arch = m_reg_infos_up->GetTargetArchitecture();
+  const llvm::Triple triple = target_arch.GetTriple();
+  const lldb::ByteOrder byte_order = target_arch.GetByteOrder();
 
   std::vector<DynamicRegisterInfo::Register> registers;
   uint32_t byte_offset = 0;
@@ -75,14 +78,13 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
 
   // Build dynamic register information for FPR.
   const lldb_private::ConstString fpr_set("FPR");
-  m_fpregset = getRegset(
-      notes, m_reg_infos_up->GetTargetArchitecture().GetTriple(), FPR_Desc);
+  m_fpregset = getRegset(notes, triple, FPR_Desc);
   if (m_fpregset.GetByteSize() >= g_register_infos_riscv32_fpr[0].byte_size) {
     // FPR is available.
     assert((m_fpregset.GetByteSize() /
             g_register_infos_riscv32_fpr[0].byte_size) == k_num_fpr_registers &&
            "FPR has the wrong number of registers!");
-    m_fpregset.SetByteOrder(lldb::eByteOrderLittle);
+    m_fpregset.SetByteOrder(byte_order);
     for (const auto &fpr : g_register_infos_riscv32_fpr) {
       registers.push_back(BuildDynamicRegister(fpr, fpr_set, byte_offset));
       byte_offset += fpr.byte_size;
@@ -91,34 +93,34 @@ RegisterContextCorePOSIX_riscv32::RegisterContextCorePOSIX_riscv32(
 
   // Build dynamic register information for CSR.
   const lldb_private::ConstString csr_set("CSR");
-  m_csregset =
-      getRegset(notes, m_reg_infos_up->GetTargetArchitecture().GetTriple(),
-                RISCV32_CSREGMAP_Desc);
+  m_csregset = getRegset(notes, triple, RISCV32_CSREGMAP_Desc);
   if (m_csregset.GetByteSize() >=
       (sizeof(csr_kv_t::addr) + sizeof(csr_kv_t::val))) {
     // CSR is available.
-    m_csregset.SetByteOrder(lldb::eByteOrderLittle);
+    m_csregset.SetByteOrder(byte_order);
     lldb::offset_t offset = 0;
+    std::vector<uint32_t> csregset_regnums = {};
     while (m_csregset.BytesLeft(offset)) {
       uint32_t csr_addr = m_csregset.GetU32(&offset);
-      if (m_csregset_regnums.size() == k_num_csr_registers) {
+      if (csregset_regnums.size() == k_num_csr_registers) {
         Debugger::ReportWarning(
             llvm::formatv("parsed the permissible number of CSRs {0:x} but "
                           "NT_CSREGMAP has more; skipping the remaining CSRs",
                           k_num_csr_registers));
         break;
       }
-      if (llvm::is_contained(m_csregset_regnums, csr_addr)) {
+      if (llvm::is_contained(csregset_regnums, csr_addr)) {
         Debugger::ReportWarning(
             llvm::formatv("encountered a duplicate CSR while parsing "
                           "NT_CSREGMAP: {0}; skipping",
                           g_register_infos_riscv32_csr[csr_addr].name));
       } else {
-        m_csregset_regnums.push_back(csr_addr);
+        csregset_regnums.push_back(csr_addr);
         const RegisterInfo &csr = g_register_infos_riscv32_csr[csr_addr];
         registers.push_back(BuildDynamicRegister(csr, csr_set, byte_offset));
         byte_offset += csr.byte_size;
       }
+      // Consume and skip the CSR value to advance to the next entry.
       (void)m_csregset.GetU32(&offset);
     }
   }
